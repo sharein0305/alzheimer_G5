@@ -18,10 +18,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---- Sidebar for Info ----
-# with st.sidebar:
-#     st.info("ℹ️ **About This App**\n\nBuilt to raise awareness of Alzheimer’s risks. No information is stored.")
-#     st.markdown("Created by Your Name | [GitHub](https://github.com/yourrepo)")
     
 with st.sidebar:
     st.markdown("## 🎯 Project Goal")
@@ -87,10 +83,6 @@ except:
     )
 
 
-# try:
-#     st.image("alzheimer_image.jpg", use_container_width=True)
-# except:
-#     st.image("https://www.alz.org/images/hp/hero/alzheimers-dementia-hero.jpg", use_container_width=True)
 
 
 st.markdown("#### 💡 Why This Matters")
@@ -159,7 +151,6 @@ with st.form("user_inputs"):
         ethnicity = st.selectbox("Ethnicity", ["Caucasian", "African American", "Asian", "Other"])      
     with col2:
         gender = st.radio("Gender", ["Male", "Female"], horizontal=True)
-        # Add a spacer using markdown or an empty element
         st.markdown("")  # Spacer for better alignment
         education = st.selectbox("Education Level", ["None", "High School", "Bachelor's", "Higher"], help="Higher education is associated with lower risk.")
 
@@ -252,6 +243,7 @@ with st.form("user_inputs"):
     col1, col2 = st.columns(2)
     with col1:
         mmse = st.slider("MMSE Score", 0, 30, 28, help="The Mini-Mental State Examination assesses cognitive function. Lower scores may suggest cognitive impairment.")
+        st.markdown('[More about the MMSE](https://www.physio-pedia.com/Mini-Mental_State_Examination)')
         func_assess = st.slider("Functional Assessment (0–10)", 0, 10, 8, help="Assesses ability to function independently. Lower scores suggest more difficulty.")
         adl = st.slider("Daily Living Activities (0–10)", 0, 10, 5,
  help="Measures ability to manage daily activities. Higher scores reflect more independence.")
