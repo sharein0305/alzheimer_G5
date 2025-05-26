@@ -243,7 +243,8 @@ with st.form("user_inputs"):
     col1, col2 = st.columns(2)
     with col1:
         mmse = st.slider("MMSE Score", 0, 30, 28, help="The Mini-Mental State Examination assesses cognitive function. Lower scores may suggest cognitive impairment.")
-        st.markdown('[More about the MMSE](https://www.physio-pedia.com/Mini-Mental_State_Examination)')
+        st.markdown("<span style='font-size: 12px;'>" "<a href='https://www.physio-pedia.com/Mini-Mental_State_Examination' target='_blank'>" "What is MMSE?</a></span>", 
+                    unsafe_allow_html=True)        
         func_assess = st.slider("Functional Assessment (0–10)", 0, 10, 8, help="Assesses ability to function independently. Lower scores suggest more difficulty.")
         adl = st.slider("Daily Living Activities (0–10)", 0, 10, 5,
  help="Measures ability to manage daily activities. Higher scores reflect more independence.")
