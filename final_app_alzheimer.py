@@ -38,7 +38,7 @@ with st.sidebar:
     - HO WEI WEN
     - CHEONG MENG BEN
     """)
-    st.markdown("[View GitHub Repo](https://github.com/your-repo)", unsafe_allow_html=True)
+    st.markdown("[View GitHub Repo](https://github.com/sharein0305/alzheimer_G5)", unsafe_allow_html=True)
 
 # ---- Styling ----
 st.markdown(
