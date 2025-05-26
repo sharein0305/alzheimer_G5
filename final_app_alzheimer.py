@@ -51,7 +51,7 @@ st.markdown(
 
 
 # ---- Main Content ----
-st.title("Alzheimer's Disease Risk Prediction")
+st.title("Alzheimer's Disease Risk Prediction for Seniors")
 # st.write(
 #     "Answer the following questions to estimate your risk for Alzheimer's disease based on medically relevant factors. This does not constitute a clinical diagnosis."
 # )
