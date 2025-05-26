@@ -165,7 +165,7 @@ with st.form("user_inputs"):
             weight = st.number_input("Enter your weight (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1)
             height = st.number_input("Enter your height (cm)", min_value=120.0, max_value=220.0, value=170.0, step=0.1)
             calculated_bmi = weight / ((height / 100) ** 2)
-            st.markdown(f"**Your calculated BMI is:** {calculated_bmi:.1f}")
+            st.markdown(f"**Your calculated BMI is:** {calculated_bmi:.2f}")
         bmi = st.slider("BMI (Body Mass Index)", 15.0, 50.0, calculated_bmi, step=0.1,
                     help="Body Mass Index = weight in kg / (height in m)^2")
         diet = st.slider("Diet Quality (0 = poor, 10 = excellent)", 0, 10, 5, help="A healthy diet is protective against cognitive decline.")
