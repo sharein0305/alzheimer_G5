@@ -8,6 +8,9 @@ import base64 # for image display
 from scipy import stats
 from fpdf import FPDF # report download
 from sklearn.base import BaseEstimator, TransformerMixin
+import shap
+import re
+import scipy.special
 
 # ---- Header & Branding ----
 # st.set_page_config(page_title="Alzheimer's Predictor", layout="centered")
@@ -18,6 +21,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ---- Sidebar for Info ----
+# with st.sidebar:
+#     st.info("ℹ️ **About This App**\n\nBuilt to raise awareness of Alzheimer’s risks. No information is stored.")
+#     st.markdown("Created by Your Name | [GitHub](https://github.com/yourrepo)")
     
 with st.sidebar:
     st.markdown("## 🎯 Project Goal")
@@ -47,7 +54,7 @@ st.markdown(
 
 
 # ---- Main Content ----
-st.title("Alzheimer's Disease Risk Prediction for Seniors")
+st.title("Alzheimer's Disease Risk Prediction")
 # st.write(
 #     "Answer the following questions to estimate your risk for Alzheimer's disease based on medically relevant factors. This does not constitute a clinical diagnosis."
 # )
@@ -83,6 +90,10 @@ except:
     )
 
 
+# try:
+#     st.image("alzheimer_image.jpg", use_container_width=True)
+# except:
+#     st.image("https://www.alz.org/images/hp/hero/alzheimers-dementia-hero.jpg", use_container_width=True)
 
 
 st.markdown("#### 💡 Why This Matters")
@@ -151,6 +162,7 @@ with st.form("user_inputs"):
         ethnicity = st.selectbox("Ethnicity", ["Caucasian", "African American", "Asian", "Other"])      
     with col2:
         gender = st.radio("Gender", ["Male", "Female"], horizontal=True)
+        # Add a spacer using markdown or an empty element
         st.markdown("")  # Spacer for better alignment
         education = st.selectbox("Education Level", ["None", "High School", "Bachelor's", "Higher"], help="Higher education is associated with lower risk.")
 
@@ -165,8 +177,8 @@ with st.form("user_inputs"):
             weight = st.number_input("Enter your weight (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1)
             height = st.number_input("Enter your height (cm)", min_value=120.0, max_value=220.0, value=170.0, step=0.1)
             calculated_bmi = weight / ((height / 100) ** 2)
-            st.markdown(f"**Your calculated BMI is:** {calculated_bmi:.2f}")
-        bmi = st.slider("BMI (Body Mass Index)", 15.0, 50.0, calculated_bmi, step=0.1,
+            st.markdown(f"**Your calculated BMI is:** {calculated_bmi:.1f}")
+        bmi = st.slider("BMI (Body Mass Index)", 15.0, 50.0, 24.0, step=0.1,
                     help="Body Mass Index = weight in kg / (height in m)^2")
         diet = st.slider("Diet Quality (0 = poor, 10 = excellent)", 0, 10, 5, help="A healthy diet is protective against cognitive decline.")
         
@@ -243,8 +255,6 @@ with st.form("user_inputs"):
     col1, col2 = st.columns(2)
     with col1:
         mmse = st.slider("MMSE Score", 0, 30, 28, help="The Mini-Mental State Examination assesses cognitive function. Lower scores may suggest cognitive impairment.")
-        st.markdown("<span style='font-size: 12px;'>" "<a href='https://www.physio-pedia.com/Mini-Mental_State_Examination' target='_blank'>" "What is MMSE?</a></span>", 
-                    unsafe_allow_html=True)        
         func_assess = st.slider("Functional Assessment (0–10)", 0, 10, 8, help="Assesses ability to function independently. Lower scores suggest more difficulty.")
         adl = st.slider("Daily Living Activities (0–10)", 0, 10, 5,
  help="Measures ability to manage daily activities. Higher scores reflect more independence.")
@@ -492,6 +502,118 @@ if submit:
         st.caption(f"Your lifestyle risk score is {user_fe['LifestyleRisk'].iloc[0]}. Lower is better!")
 
 
+
+    # --- SHAP Model Feature Importance (global, for all data) ---
+    with st.expander("🔬 Model Explainability: See Which Features Most Influence The Algorithm"):
+        st.markdown("""
+            <b>Which features most increased or decreased risk across everyone?</b><br>
+            The chart below sorts features so the top rows are the most powerful overall.<br>
+            <i>(Red: increases risk, Blue: reduces risk.)</i>
+        """, unsafe_allow_html=True)
+        try:
+            X_train = train_df.copy()
+            X_proc = pipeline[:-1].transform(X_train)
+            model = pipeline.named_steps['classifier']
+            preprocessor = pipeline.named_steps.get('preprocessor', None) or pipeline.named_steps.get('transformer', None)
+            if hasattr(preprocessor, 'get_feature_names_out'):
+                feature_names = preprocessor.get_feature_names_out()
+            else:
+                feature_names = all_features_order
+            exp = shap.Explainer(model, X_proc)
+            shap_values = exp(X_proc)
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            feature_names_clean = [re.sub(r'^(mean_num__|mode_num__|median_num__|cat__|num__)?', '', str(f)) for f in feature_names]
+            shap.summary_plot(shap_values, X_proc, feature_names=feature_names_clean, show=False, plot_type="bar")
+
+            # shap.summary_plot(shap_values, X_proc, feature_names=feature_names, show=False, plot_type="bar")
+            st.pyplot(fig)
+        except Exception as e:
+            st.error(f"Could not display SHAP plot. Reason: {e}")
+
+    # --- SHAP Personal Impact Table/Chart (per-user percent impact) ---
+    with st.expander("🔬 See How Your Answers Affect Your Risk"):
+        st.markdown(
+            "<b>Impact of each feature on your risk (% points):</b><br>"
+            "Shows how much each input increased (red) or decreased (blue) your Alzheimer's risk compared to the average.<br>"
+            "<i>Table sorted: biggest effect at the top.</i>",
+            unsafe_allow_html=True,
+        )
+        
+        try:
+            preprocessor = pipeline.named_steps.get('preprocessor', None)
+            model = pipeline.named_steps['classifier']
+            # Preprocess user input for SHAP
+            # if preprocessor:
+            #     user_proc = preprocessor.transform(input_df)
+            #     feature_names = (
+            #         preprocessor.get_feature_names_out()
+            #         if hasattr(preprocessor, 'get_feature_names_out')
+            #         else input_df.columns
+            #     )
+            # else:
+            #     user_proc = input_df.values
+            #     feature_names = input_df.columns
+
+            user_fe = fe.transform(input_df)  # Already present in your code!
+            
+            if preprocessor:
+                user_proc = preprocessor.transform(user_fe)
+                feature_names = (
+                    preprocessor.get_feature_names_out()
+                    if hasattr(preprocessor, 'get_feature_names_out')
+                    else user_fe.columns
+                )
+            else:
+                user_proc = user_fe.values
+                feature_names = user_fe.columns
+
+                ## updated====
+
+            # Use background from training set, sample for speed
+            bg_proc = pipeline[:-1].transform(train_df.sample(min(200, len(train_df)), random_state=42))
+
+            explainer = shap.Explainer(model, bg_proc)
+            shap_vals_user = explainer(user_proc)
+
+            base_value = shap_vals_user.base_values[0]
+            shap_contributions = shap_vals_user.values[0]
+            logit = base_value + shap_contributions.sum()
+            pred_prob = scipy.special.expit(logit)
+
+            # Compute impact per feature
+            impacts = []
+            for i, (f, shapval) in enumerate(zip(feature_names, shap_contributions)):
+                logit_without = logit - shapval
+                prob_without = scipy.special.expit(logit_without)
+                delta = (pred_prob - prob_without) * 100
+                
+                impacts.append(dict(Feature=re.sub(r'^(mean_num__|mode_num__|median_num__|cat__|num__)?', '', str(f)), Impact=delta))
+                # impacts.append(dict(Feature=f, Impact=delta))
+            impacts = sorted(impacts, key=lambda x: abs(x['Impact']), reverse=True)
+            df_impacts = pd.DataFrame(impacts)
+            df_impacts["Effect"] = df_impacts["Impact"].apply(lambda x: "↑" if x > 0 else "↓")
+            df_impacts["Impact"] = df_impacts["Impact"].map(lambda x: f"{x:+.2f}%")
+            df_impacts = df_impacts.rename(columns={"Feature": "Feature", "Impact": "Change in Your Risk", "Effect": "Effect"})
+            st.dataframe(df_impacts.set_index('Feature'), height=360)
+            st.caption("↑ means this answer pushed your risk higher; ↓ means it reduced your risk.")
+
+            # Optional top N chart
+            top_n = 10
+            fig, ax = plt.subplots(figsize=(7, top_n//2 + 1))
+            ylabels = [f"{row['Feature']} {row['Effect']}" for _, row in df_impacts.head(top_n).iterrows()]
+            values = [float(row['Change in Your Risk'].replace('%','')) for _, row in df_impacts.head(top_n).iterrows()]
+            colors = ['#e74c3c' if "↑" in row['Effect'] else '#3498db' for _, row in df_impacts.head(top_n).iterrows()]
+            ax.barh(ylabels, values, color=colors)
+            ax.axvline(0, color='k', lw=1)
+            ax.set_xlabel('Change in Your Predicted Risk (%)')
+            ax.set_title('Top Features Impacting Your Risk')
+            plt.tight_layout()
+            st.pyplot(fig)
+        except Exception as e:
+            st.error(f"Could not display personalized SHAP impact. Reason: {e}")
+
+            
     # Any symptom
     if user_fe['AnySymptom'].iloc[0]:
         st.warning("You reported at least one cognitive symptom. Early detection and intervention are important—consider discussing with a healthcare provider.")
@@ -581,7 +703,5 @@ if submit:
     </div> 
     """, unsafe_allow_html=True)
 
-
-   
 # ---- Footer ----
 st.markdown("--\n:lock: *No personal data is stored. For informational purposes only. Consult a healthcare provider for medical advice.*")
