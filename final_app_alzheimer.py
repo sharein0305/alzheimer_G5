@@ -12,8 +12,7 @@ import shap
 import re
 import scipy.special
 
-# ---- Header & Branding ----
-# st.set_page_config(page_title="Alzheimer's Predictor", layout="centered")
+# ---- Header & Branding ---
 st.set_page_config(
     page_title="Alzheimer's Predictor",
     page_icon="🧠",
@@ -22,9 +21,6 @@ st.set_page_config(
 )
 
 # ---- Sidebar for Info ----
-# with st.sidebar:
-#     st.info("ℹ️ **About This App**\n\nBuilt to raise awareness of Alzheimer’s risks. No information is stored.")
-#     st.markdown("Created by Your Name | [GitHub](https://github.com/yourrepo)")
     
 with st.sidebar:
     st.markdown("## 🎯 Project Goal")
@@ -55,9 +51,7 @@ st.markdown(
 
 # ---- Main Content ----
 st.title("Alzheimer's Disease Risk Prediction")
-# st.write(
-#     "Answer the following questions to estimate your risk for Alzheimer's disease based on medically relevant factors. This does not constitute a clinical diagnosis."
-# )
+
 st.markdown(
     "Answer the following questions to estimate your risk for Alzheimer's disease based on clinically relevant factors. "
     "**Please note:** This tool is for informational purposes only and does not constitute a clinical diagnosis."
@@ -88,12 +82,6 @@ except:
         """,
         unsafe_allow_html=True
     )
-
-
-# try:
-#     st.image("alzheimer_image.jpg", use_container_width=True)
-# except:
-#     st.image("https://www.alz.org/images/hp/hero/alzheimers-dementia-hero.jpg", use_container_width=True)
 
 
 st.markdown("#### 💡 Why This Matters")
@@ -504,32 +492,32 @@ if submit:
 
 
     # --- SHAP Model Feature Importance (global, for all data) ---
-    with st.expander("🔬 Model Explainability: See Which Features Most Influence The Algorithm"):
-        st.markdown("""
-            <b>Which features most increased or decreased risk across everyone?</b><br>
-            The chart below sorts features so the top rows are the most powerful overall.<br>
-            <i>(Red: increases risk, Blue: reduces risk.)</i>
-        """, unsafe_allow_html=True)
-        try:
-            X_train = train_df.copy()
-            X_proc = pipeline[:-1].transform(X_train)
-            model = pipeline.named_steps['classifier']
-            preprocessor = pipeline.named_steps.get('preprocessor', None) or pipeline.named_steps.get('transformer', None)
-            if hasattr(preprocessor, 'get_feature_names_out'):
-                feature_names = preprocessor.get_feature_names_out()
-            else:
-                feature_names = all_features_order
-            exp = shap.Explainer(model, X_proc)
-            shap_values = exp(X_proc)
-            fig, ax = plt.subplots(figsize=(8, 6))
+    # with st.expander("🔬 Model Explainability: See Which Features Most Influence The Algorithm"):
+    #     st.markdown("""
+    #         <b>Which features most increased or decreased risk across everyone?</b><br>
+    #         The chart below sorts features so the top rows are the most powerful overall.<br>
+    #         <i>(Red: increases risk, Blue: reduces risk.)</i>
+    #     """, unsafe_allow_html=True)
+    #     try:
+    #         X_train = train_df.copy()
+    #         X_proc = pipeline[:-1].transform(X_train)
+    #         model = pipeline.named_steps['classifier']
+    #         preprocessor = pipeline.named_steps.get('preprocessor', None) or pipeline.named_steps.get('transformer', None)
+    #         if hasattr(preprocessor, 'get_feature_names_out'):
+    #             feature_names = preprocessor.get_feature_names_out()
+    #         else:
+    #             feature_names = all_features_order
+    #         exp = shap.Explainer(model, X_proc)
+    #         shap_values = exp(X_proc)
+    #         fig, ax = plt.subplots(figsize=(8, 6))
             
-            feature_names_clean = [re.sub(r'^(mean_num__|mode_num__|median_num__|cat__|num__)?', '', str(f)) for f in feature_names]
-            shap.summary_plot(shap_values, X_proc, feature_names=feature_names_clean, show=False, plot_type="bar")
+    #         feature_names_clean = [re.sub(r'^(mean_num__|mode_num__|median_num__|cat__|num__)?', '', str(f)) for f in feature_names]
+    #         shap.summary_plot(shap_values, X_proc, feature_names=feature_names_clean, show=False, plot_type="bar")
 
-            # shap.summary_plot(shap_values, X_proc, feature_names=feature_names, show=False, plot_type="bar")
-            st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Could not display SHAP plot. Reason: {e}")
+    #         # shap.summary_plot(shap_values, X_proc, feature_names=feature_names, show=False, plot_type="bar")
+    #         st.pyplot(fig)
+    #     except Exception as e:
+    #         st.error(f"Could not display SHAP plot. Reason: {e}")
 
     # --- SHAP Personal Impact Table/Chart (per-user percent impact) ---
     with st.expander("🔬 See How Your Answers Affect Your Risk"):
@@ -543,19 +531,8 @@ if submit:
         try:
             preprocessor = pipeline.named_steps.get('preprocessor', None)
             model = pipeline.named_steps['classifier']
-            # Preprocess user input for SHAP
-            # if preprocessor:
-            #     user_proc = preprocessor.transform(input_df)
-            #     feature_names = (
-            #         preprocessor.get_feature_names_out()
-            #         if hasattr(preprocessor, 'get_feature_names_out')
-            #         else input_df.columns
-            #     )
-            # else:
-            #     user_proc = input_df.values
-            #     feature_names = input_df.columns
 
-            user_fe = fe.transform(input_df)  # Already present in your code!
+            user_fe = fe.transform(input_df)  
             
             if preprocessor:
                 user_proc = preprocessor.transform(user_fe)
@@ -568,7 +545,6 @@ if submit:
                 user_proc = user_fe.values
                 feature_names = user_fe.columns
 
-                ## updated====
 
             # Use background from training set, sample for speed
             bg_proc = pipeline[:-1].transform(train_df.sample(min(200, len(train_df)), random_state=42))
