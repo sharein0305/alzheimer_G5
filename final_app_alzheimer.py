@@ -249,7 +249,7 @@ with st.form("user_inputs"):
 
     with col2:
         memory_complaints = st.radio("Memory Complaints", ["No", "Yes"], help="Have you noticed recent memory challenges?")
-        behavioral = st.radio("Behavioral Changes", ["No", "Yes"], help="Includes mood swings, irritability, or unusual behaviors.")
+        behavioral = st.radio("Behavioral Problems", ["No", "Yes"], help="Includes mood swings, irritability, or unusual behaviors.")
 
 
     # 6. Symptoms
